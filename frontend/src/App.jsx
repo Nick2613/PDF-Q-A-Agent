@@ -1,38 +1,76 @@
-import React, { useState } from "react";
+import { useState } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API = import.meta.env.VITE_API_URL;
 
-export default function App() {
+function App() {
   const [file, setFile] = useState(null);
-  const [q, setQ] = useState("");
+  const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
 
   async function upload() {
-    const fd = new FormData();
-    fd.append("file", file);
-    const r = await fetch(`${API}/upload_pdf`, { method: "POST", body: fd });
-    alert(JSON.stringify(await r.json()));
+    if (!file) {
+      setAnswer("Select a PDF first.");
+      return;
+    }
+
+    const data = new FormData();
+    data.append("file", file);
+
+    const res = await fetch(`${API}/upload_pdf`, {
+      method: "POST",
+      body: data
+    });
+
+    const json = await res.json();
+    setAnswer(`Uploaded and indexed: ${json.chunks} chunks`);
   }
 
   async function ask() {
-    const fd = new FormData();
-    fd.append("question", q);
-    const r = await fetch(`${API}/ask`, { method: "POST", body: fd });
-    const j = await r.json();
-    setAnswer(j.answer);
+    if (!question.trim()) {
+      setAnswer("Enter a question.");
+      return;
+    }
+
+    const res = await fetch(`${API}/ask`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: question })
+    });
+
+    const json = await res.json();
+    setAnswer(json.answer);
   }
 
   return (
-    <div className="box">
-      <h2>PDF Q&A — Groq + RAG</h2>
+    <div style={{ width: "80%", margin: "30px auto", fontFamily: "Arial" }}>
+      <h1>PDF Q&A — Groq + RAG</h1>
 
-      <input type="file" onChange={e=>setFile(e.target.files[0])} />
-      <button onClick={upload}>Upload</button>
+      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+      <button onClick={upload} style={{ marginLeft: "10px" }}>Upload</button>
 
-      <textarea rows="3" placeholder="Ask" value={q} onChange={e=>setQ(e.target.value)}></textarea>
+      <br /><br />
+
+      <textarea
+        placeholder="Ask something from the PDF..."
+        value={question}
+        onChange={(e) => setQuestion(e.target.value)}
+        rows="3"
+        style={{ width: "100%" }}
+      />
+
+      <br /><br />
       <button onClick={ask}>Ask</button>
 
-      <pre>{answer}</pre>
+      <div style={{
+        background: "#f0f0f0",
+        padding: "15px",
+        marginTop: "20px",
+        minHeight: "40px"
+      }}>
+        {answer}
+      </div>
     </div>
   );
 }
+
+export default App;
