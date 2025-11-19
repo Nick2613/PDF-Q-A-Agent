@@ -2,11 +2,12 @@ import os
 import shutil
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from .pdf_extract import extract_text_from_pdf
-from .chunker import chunk_text
-from .embeddings_store import VectorStore
-from .qa import QAEngine
-import uvicorn
+
+from pdf_extract import extract_text_from_pdf
+from chunker import chunk_text
+from embeddings_store import VectorStore
+from qa import QAEngine
+
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"])

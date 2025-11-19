@@ -1,6 +1,6 @@
 import os
 import aiohttp
-from .embeddings_store import VectorStore
+from embeddings_store import VectorStore
 from dotenv import load_dotenv
 
 load_dotenv()
