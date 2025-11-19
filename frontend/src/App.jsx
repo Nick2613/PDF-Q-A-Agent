@@ -1,76 +1,96 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
-const API = import.meta.env.VITE_API_URL;
-
-function App() {
+export default function App() {
   const [file, setFile] = useState(null);
-  const [question, setQuestion] = useState("");
+  const [query, setQuery] = useState("");
   const [answer, setAnswer] = useState("");
+  const [status, setStatus] = useState("");
 
-  async function upload() {
-    if (!file) {
-      setAnswer("Select a PDF first.");
-      return;
+  // Convert frontend port → backend port
+  const BACKEND = window.location.origin.replace(
+    /-\d+\.app\.github\.dev/,
+    "-8000.app.github.dev"
+  );
+
+  async function uploadPDF() {
+    try {
+      if (!file) {
+        setStatus("Select a PDF first");
+        return;
+      }
+
+      setStatus("Uploading PDF...");
+
+      const form = new FormData();
+      form.append("file", file);
+
+      const r = await fetch(`${BACKEND}/upload_pdf`, {
+        method: "POST",
+        body: form
+      });
+
+      console.log("Upload status:", r.status);
+
+      const data = await r.json();
+      setStatus("PDF Uploaded. Chunks: " + data.chunks);
+    } catch (e) {
+      console.error("Upload error:", e);
+      setStatus("Upload error: " + e.message);
     }
-
-    const data = new FormData();
-    data.append("file", file);
-
-    const res = await fetch(`${API}/upload_pdf`, {
-      method: "POST",
-      body: data
-    });
-
-    const json = await res.json();
-    setAnswer(`Uploaded and indexed: ${json.chunks} chunks`);
   }
 
-  async function ask() {
-    if (!question.trim()) {
-      setAnswer("Enter a question.");
-      return;
+  async function askQuestion() {
+    try {
+      if (!query.trim()) {
+        setStatus("Enter a question.");
+        return;
+      }
+
+      setStatus("Thinking...");
+
+      const r = await fetch(`${BACKEND}/ask`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query })
+      });
+
+      console.log("Ask status:", r.status);
+
+      const data = await r.json();
+      setAnswer(data.answer);
+      setStatus("Done.");
+    } catch (e) {
+      console.error("Ask error:", e);
+      setStatus("Ask error: Failed to fetch");
     }
-
-    const res = await fetch(`${API}/ask`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query: question })
-    });
-
-    const json = await res.json();
-    setAnswer(json.answer);
   }
 
   return (
-    <div style={{ width: "80%", margin: "30px auto", fontFamily: "Arial" }}>
+    <div style={{ padding: 20 }}>
       <h1>PDF Q&A — Groq + RAG</h1>
 
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-      <button onClick={upload} style={{ marginLeft: "10px" }}>Upload</button>
+      <input type="file" onChange={e => setFile(e.target.files[0])} />
+      <button onClick={uploadPDF}>Upload PDF</button>
 
       <br /><br />
 
-      <textarea
-        placeholder="Ask something from the PDF..."
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        rows="3"
-        style={{ width: "100%" }}
+      <input
+        placeholder="Ask a question..."
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+        style={{ width: "350px" }}
       />
+      <button onClick={askQuestion}>Ask</button>
 
-      <br /><br />
-      <button onClick={ask}>Ask</button>
+      <h3>Status:</h3>
+      <div>{status}</div>
 
-      <div style={{
-        background: "#f0f0f0",
-        padding: "15px",
-        marginTop: "20px",
-        minHeight: "40px"
-      }}>
-        {answer}
-      </div>
+      <h3>Answer:</h3>
+      <pre>{answer}</pre>
+
+      <p style={{ marginTop: "30px", fontSize: "12px" }}>
+        Backend used: {BACKEND}
+      </p>
     </div>
   );
 }
-
-export default App;
