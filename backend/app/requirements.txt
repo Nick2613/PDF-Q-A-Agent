@@ -1,9 +1,8 @@
 fastapi
 uvicorn[standard]
 python-multipart
-PyMuPDF
-sentence-transformers
+pymupdf
 faiss-cpu
 langdetect
 python-dotenv
-aiohttp
+requests
