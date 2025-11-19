@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+python-multipart
+PyMuPDF
+sentence-transformers
+faiss-cpu
+langdetect
+python-dotenv
+aiohttp
