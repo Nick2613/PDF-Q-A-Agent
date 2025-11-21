@@ -1,96 +1,101 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import './App.css';
 
-export default function App() {
+// Point to the backend URL
+const API_URL = "http://localhost:8000";
+
+function App() {
   const [file, setFile] = useState(null);
-  const [query, setQuery] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [status, setStatus] = useState("");
+  const [uploadStatus, setUploadStatus] = useState("");
+  const [question, setQuestion] = useState("");
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Convert frontend port → backend port
-  const BACKEND = window.location.origin.replace(
-    /-\d+\.app\.github\.dev/,
-    "-8000.app.github.dev"
-  );
+  const handleUpload = async () => {
+    if (!file) return alert("Please select a file");
+    
+    const formData = new FormData();
+    formData.append("file", file);
+    setUploadStatus("Uploading...");
 
-  async function uploadPDF() {
     try {
-      if (!file) {
-        setStatus("Select a PDF first");
-        return;
-      }
-
-      setStatus("Uploading PDF...");
-
-      const form = new FormData();
-      form.append("file", file);
-
-      const r = await fetch(`${BACKEND}/upload_pdf`, {
+      const res = await fetch(`${API_URL}/upload_pdf`, {
         method: "POST",
-        body: form
+        body: formData,
       });
-
-      console.log("Upload status:", r.status);
-
-      const data = await r.json();
-      setStatus("PDF Uploaded. Chunks: " + data.chunks);
-    } catch (e) {
-      console.error("Upload error:", e);
-      setStatus("Upload error: " + e.message);
+      const data = await res.json();
+      setUploadStatus(`✅ ${data.message}`);
+      setChatHistory([]); // Reset chat on new file
+    } catch (error) {
+      setUploadStatus("❌ Upload failed");
+      console.error(error);
     }
-  }
+  };
 
-  async function askQuestion() {
+  const handleAsk = async () => {
+    if (!question) return;
+    
+    const newHistory = [...chatHistory, { role: 'user', content: question }];
+    setChatHistory(newHistory);
+    setQuestion("");
+    setIsLoading(true);
+
     try {
-      if (!query.trim()) {
-        setStatus("Enter a question.");
-        return;
-      }
-
-      setStatus("Thinking...");
-
-      const r = await fetch(`${BACKEND}/ask`, {
+      const res = await fetch(`${API_URL}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query: question }),
       });
-
-      console.log("Ask status:", r.status);
-
-      const data = await r.json();
-      setAnswer(data.answer);
-      setStatus("Done.");
-    } catch (e) {
-      console.error("Ask error:", e);
-      setStatus("Ask error: Failed to fetch");
+      const data = await res.json();
+      setChatHistory([...newHistory, { role: 'bot', content: data.answer, sources: data.sources }]);
+    } catch (error) {
+      setChatHistory([...newHistory, { role: 'bot', content: "Error getting answer." }]);
     }
-  }
+    setIsLoading(false);
+  };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1>PDF Q&A — Groq + RAG</h1>
+    <div className="app-container">
+      <header>
+        <h1>📄 PDF Multilingual Chatbot</h1>
+      </header>
 
-      <input type="file" onChange={e => setFile(e.target.files[0])} />
-      <button onClick={uploadPDF}>Upload PDF</button>
+      <div className="upload-section">
+        <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+        <button onClick={handleUpload}>Upload PDF</button>
+        <p className="status">{uploadStatus}</p>
+      </div>
 
-      <br /><br />
+      <div className="chat-section">
+        <div className="messages">
+          {chatHistory.map((msg, index) => (
+            <div key={index} className={`message ${msg.role}`}>
+              <strong>{msg.role === 'user' ? 'You' : 'AI'}:</strong>
+              <p>{msg.content}</p>
+              {msg.sources && (
+                <details>
+                  <summary>View Sources</summary>
+                  <p className="source-text">{msg.sources}</p>
+                </details>
+              )}
+            </div>
+          ))}
+          {isLoading && <div className="message bot">Thinking...</div>}
+        </div>
 
-      <input
-        placeholder="Ask a question..."
-        value={query}
-        onChange={e => setQuery(e.target.value)}
-        style={{ width: "350px" }}
-      />
-      <button onClick={askQuestion}>Ask</button>
-
-      <h3>Status:</h3>
-      <div>{status}</div>
-
-      <h3>Answer:</h3>
-      <pre>{answer}</pre>
-
-      <p style={{ marginTop: "30px", fontSize: "12px" }}>
-        Backend used: {BACKEND}
-      </p>
+        <div className="input-area">
+          <input 
+            type="text" 
+            value={question} 
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleAsk()}
+            placeholder="Ask a question about the PDF..." 
+          />
+          <button onClick={handleAsk}>Send</button>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default App;
