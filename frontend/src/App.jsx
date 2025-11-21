@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 
 // Point to the backend URL
-const API_URL = "http://localhost:8000";
+const API_URL = "https://upgraded-journey-7gjxg9rrjpr3rvvv-8000.app.github.dev";
 
 function App() {
   const [file, setFile] = useState(null);
