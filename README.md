@@ -1,20 +1,20 @@
-PDF-Q/A-Agent/
-│
+PDF-Q/A-Agent
+├── docker-compose.yml
+├── .env
+├── .gitignore
+├── README.md
 ├── backend/
 │   ├── Dockerfile
+│   ├── requirements.txt
 │   └── app/
-│       ├── requirements.txt      <-- REQUIRED
 │       ├── main.py
-│       ├── qa.py
-│       ├── pdf_extract.py
-│       ├── chunker.py
-│       ├── embeddings_store.py
-│
-├── frontend/
-│   ├── Dockerfile
-│   └── src/
-│       ├── App.jsx
-│       ├── main.jsx
-│       ├── styles.css
-│
-└── docker-compose.yml
+│       └── __init__.py
+└── frontend/
+    ├── Dockerfile
+    ├── package.json
+    ├── vite.config.js
+    ├── index.html
+    └── src/
+        ├── main.jsx
+        ├── App.jsx
+        └── App.css
