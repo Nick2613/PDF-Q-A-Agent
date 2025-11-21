@@ -3,6 +3,7 @@ uvicorn[standard]
 python-multipart
 pymupdf
 faiss-cpu
-langdetect
-python-dotenv
+numpy
+sentence-transformers
 requests
+python-dotenv
